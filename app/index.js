@@ -1,24 +1,18 @@
-(function(document){
+(function (document) {
 	var photoListBtn = document.getElementById('photoListBtn');
-	photoListBtn.addEventListener('click', getAl);
-	facebookSrv.init();
-	
-	function getProfilePicturesAlbum(albums) {
-		var profileObj = {};
-		var album;
-		for (var i = 0; i < albums.length; i++) {
-			album = albums[i];
-			if (album.name === 'Profile Pictures') {
-				profileObj = album;
-			}
-		}	
-		return profileObj
+	photoListBtn.addEventListener('click', getProfilePictures);
+
+	var loginBtn = document.getElementById('loginBtn');
+	loginBtn.addEventListener('click', facebookSrv.init);
+
+	var logoutBtn = document.getElementById('logoutBtn');
+	logoutBtn.addEventListener('click', facebookSrv.logout);
+
+	function getProfilePictures() {
+		return facebookSrv.getProfilePictures().then(function (res) {
+			console.log('profile pictures -> ' + JSON.stringify(res));
+		});
 	}
-	function getAl() {
-		return facebookSrv.getAlbums().then(function(res) {
-			var a = getProfilePicturesAlbum(res.data);
-			console.log(a);
-		});	
-	}
-  	
+
 })(document)
+

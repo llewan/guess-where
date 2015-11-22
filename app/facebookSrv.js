@@ -1,40 +1,27 @@
-var facebookSrv = (function() {
-	
-	var accessToken = null;
-	var userId = null;
-  	
-	function init() {
-		FB.getLoginStatus(function(response) {
-    	statusChangeCallback(response);
-  	});	
-	}	  
-	  
-	function getAlbums() {
-    var deferred = Q.defer();
-		var url = 'https://graph.facebook.com/' + userId + '/albums?access_token=' + accessToken;
-		var xmlHttp = new XMLHttpRequest();
-		xmlHttp.onreadystatechange = function() { 
-			if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
-        deferred.resolve(JSON.parse(xmlHttp.responseText));
-		}
-		xmlHttp.open("GET", url, true); // true for asynchronous 
-		xmlHttp.send(null);
-    return deferred.promise;		
-	}
+var facebookSrv = (function () {
 
-	function login() {
-		return FB.login(function(response) {
-			// handle the response
-		}, {scope: 'public_profile,email, user_photos'});
-	}	
+  var accessToken = null;
+  var userId = null;
+
+  function init() {
+    FB.getLoginStatus(function (response) {
+      statusChangeCallback(response);
+    });
+  }
+
+  function login() {
+    return FB.login(function (response) {
+      // handle the response
+    }, { scope: 'public_profile,email, user_photos' });
+  }
+
+  function logout() {
+    return FB.logout(function (response) {
+      // Person is now logged out
+    });
+  }
 	
-	function logout() {
-		return FB.logout(function(response) {
-			// Person is now logged out
-		});
-	}
-	
-	// This is called with the results from from FB.getLoginStatus().
+  // This is called with the results from from FB.getLoginStatus().
   function statusChangeCallback(response) {
     console.log('statusChangeCallback');
     console.log(response);
@@ -44,18 +31,20 @@ var facebookSrv = (function() {
     // for FB.getLoginStatus().
     if (response.status === 'connected') {
       // Logged into your app and Facebook.
-	  accessToken = response.authResponse.accessToken;
-	  userId = response.authResponse.userID;
-      testAPI();
+      accessToken = response.authResponse.accessToken;
+      userId = response.authResponse.userID;
+      //testAPI();
     } else if (response.status === 'not_authorized') {
       // The person is logged into Facebook, but not your app.
       document.getElementById('status').innerHTML = 'Please log ' +
-        'into this app.';
+      'into this app.';
+      login();
     } else {
       // The person is not logged into Facebook, so we're not sure if
       // they are logged into this app or not.
       document.getElementById('status').innerHTML = 'Please log ' +
-        'into Facebook.';
+      'into Facebook.';
+      login();
     }
   }
   
@@ -63,26 +52,41 @@ var facebookSrv = (function() {
   // Button.  See the onlogin handler attached to it in the sample
   // code below.
   function checkLoginState() {
-    FB.getLoginStatus(function(response) {
+    FB.getLoginStatus(function (response) {
       statusChangeCallback(response);
     });
   }
   
   // Here we run a very simple test of the Graph API after login is
   // successful.  See statusChangeCallback() for when this call is made.
-  function testAPI() {
-    console.log('Welcome!  Fetching your information.... ');
-    FB.api('/me', function(response) {
-      console.log('Successful login for: ' + response);
-	  
-      document.getElementById("profile_picture").setAttribute("src", "http://graph.facebook.com/" + response.id + "/picture?type=large");
-	  //document.getElementById("profile_picture").setAttribute("src", response.picture.data.url);
+  function getProfilePictures() {
+    var deferred = Q.defer();
+    var profile_pictures = [];
+    FB.api('/me/albums', function (response) {
+      
+      // @todo get profileAlbumId from profile album
+      var profileAlbumId = response.data[0].id;
+
+      FB.api(profileAlbumId + '/photos', function (response) {
+        for (var index = 0; index < response.data.length; index++) {
+          FB.api(response.data[index].id + '/picture', function (response) {
+            if (!response.data.is_silhouette) {
+              response.data.isSelected = false;
+              profile_pictures.push(response.data);
+            }
+          })
+        }
+        deferred.resolve(profile_pictures);
+      })
     });
+    return deferred.promise;
   }
-  
+
   return {
     init: init,
-    getAlbums: getAlbums
-    
+    logout: logout,
+    checkLoginState : checkLoginState,
+    getProfilePictures: getProfilePictures
   }
+  
 })()

@@ -4,25 +4,39 @@
 <head>
 	<title>Guess Where</title>
 	<meta charset="UTF-8">
+  
+  <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 
 <body>
-	<h3 onclick="login()">Login with facebook</h3>
-	<h3 onclick="logout()">Logout from facebook</h3>
-	<button onclick="getAl()" id="photoListBtn">photolist</button>
-  <div id="status">
-	</div>
-	<img id="profile_picture" src="" alt="">
+  
+  <section class="container">
+    
+    <h2 class="margin-top-none">Guess Where</h2>
+    
+    <button id="photoListBtn">photolist</button>
+    <div id="status">
+    </div>
+    <img id="profile_picture" src="" alt="">  
+    
+    <section class="footer">
+      <button id="loginBtn" class="btn btn__facebook btn--block">Login with facebook</button> 
+      <button id="logoutBtn" class="btn btn__facebook btn__facebook--logout  btn--block">Logout</button>  
+    </section>
+    
+  </section>
+	
   
   
   <script src="http://connect.facebook.net/en_US/sdk.js"></script>
 	<script>
     FB.init({
-        appId      : '1626917877572319',
-        cookie     : true,  // enable cookies to allow the server to access the session  
-        xfbml      : true,  // parse social plugins on this page
-        version    : 'v2.2' // use version 2.2
+      appId      : '538123719685832',
+      xfbml      : true,
+      version    : 'v2.5'
     });
+    
+    
 	</script>
   <script type="text/javascript" src="node_modules/q/q.js"></script>
   <script type="text/javascript" src="app/facebookSrv.js"></script>
