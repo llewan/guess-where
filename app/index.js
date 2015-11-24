@@ -10,6 +10,19 @@
 
 	function getProfilePictures() {
 		return facebookSrv.getProfilePictures().then(function (res) {
+			var imageSection = document.getElementById('photoImageSelector');
+			var element = null;
+			
+			for (var index = 0; index < res.length; index++) {
+				element = res[index];
+				var li = document.createElement("li");
+				var img = document.createElement("img");
+				img.className = "photo";
+				img.src = element.url;
+				li.appendChild(img);
+				imageSection.appendChild(li);
+			}
+			
 			console.log('profile pictures -> ' + JSON.stringify(res));
 		});
 	}

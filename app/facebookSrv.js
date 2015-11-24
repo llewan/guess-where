@@ -12,13 +12,71 @@ var facebookSrv = (function () {
   function login() {
     return FB.login(function (response) {
       // handle the response
-    }, { scope: 'public_profile,email, user_photos' });
+    }, { scope: 'public_profile,email,user_photos' });
   }
 
   function logout() {
     return FB.logout(function (response) {
       // Person is now logged out
     });
+  }
+  
+  
+  /*
+  *   It search over the FB albums array and return the profile album
+  *   param:   Array
+  *   return: Obj
+  */
+  function getProfileAlbumId(albums) {
+    var albumId = {};
+    var found = false;
+    var index = 0;
+    
+    while (!found && index < albums.length) {
+      if (albums[index].name === 'Profile Pictures') {
+        !found;
+        albumId = albums[index].id;
+      }
+      index++;
+    }
+    return albumId;
+  }
+  
+  /*
+  *   It make picture url based on picture Id and accessToken
+  *   param:   String, String
+  *   returns: String
+  */
+  function makeFacebookPhotoURL(id, accessToken) {
+    return 'https://graph.facebook.com/' + id + '/picture?access_token=' + accessToken;
+  }  
+  
+  
+  /*
+  *   It returns a Promise with an array of pictures
+  *   param:   String
+  *   returns: Promise
+  */
+  function getPicturesFromAlbum(profileAlbumId) {
+    var deferred = Q.defer();
+    FB.api(profileAlbumId + '/photos', function (response) {
+      deferred.resolve(response.data);
+    });
+    return deferred.promise;
+  }
+  
+  
+  /*
+  *  It returns an array of albums of the current logged user
+  *   param:   
+  *   returns: Promise
+  */
+  function getAlbums() {
+    var deferred = Q.defer();
+    FB.api(userId + '/albums?access_token=' + accessToken, function (response) {
+      deferred.resolve(response.data);
+    });
+    return deferred.promise;
   }
 	
   // This is called with the results from from FB.getLoginStatus().
@@ -57,36 +115,41 @@ var facebookSrv = (function () {
     });
   }
   
-  // Here we run a very simple test of the Graph API after login is
-  // successful.  See statusChangeCallback() for when this call is made.
-  function getProfilePictures() {
-    var deferred = Q.defer();
-    var profile_pictures = [];
-    FB.api('/me/albums', function (response) {
-      
-      // @todo get profileAlbumId from profile album
-      var profileAlbumId = response.data[0].id;
 
-      FB.api(profileAlbumId + '/photos', function (response) {
-        for (var index = 0; index < response.data.length; index++) {
-          FB.api(response.data[index].id + '/picture', function (response) {
-            if (!response.data.is_silhouette) {
-              response.data.isSelected = false;
-              profile_pictures.push(response.data);
+  
+  /*
+  *  It returns a Promise with array of facebook profile picture
+  *  returns: Promise
+  */
+  function getProfilePictures() {
+    var profile_pictures = [];
+    var deferred = Q.defer();
+    checkLoginState()
+    
+    return getAlbums()
+      .then(function (albums) { 
+        return getPicturesFromAlbum(getProfileAlbumId(albums))
+          .then(function (pictures) {
+            for (var index = 0; index < pictures.length; index++) {
+              var picture = pictures[index];
+              profile_pictures.push({
+                id:           picture.id,
+                url:          makeFacebookPhotoURL(picture.id, accessToken),
+                created_time: picture.created_time,
+                is_selected:  false
+              })
             }
+            deferred.resolve(profile_pictures);
+            return deferred.promise;
           })
-        }
-        deferred.resolve(profile_pictures);
       })
-    });
-    return deferred.promise;
   }
 
   return {
     init: init,
     logout: logout,
-    checkLoginState : checkLoginState,
+    checkLoginState: checkLoginState,
     getProfilePictures: getProfilePictures
   }
-  
+
 })()
